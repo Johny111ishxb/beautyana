@@ -1,620 +1,615 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Beauty Analyzer Pro</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
     <style>
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        @keyframes shimmer {
-            0% { background-position: -1000px 0; }
-            100% { background-position: 1000px 0; }
-        }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
 
         body {
-            background: #f8fafc;
-            color: #1e293b;
-            line-height: 1.6;
+            min-height: 100vh;
+            background: #0f172a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #e2e8f0;
         }
 
         .container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 1.5rem;
-            animation: fadeIn 0.8s ease-out;
+            background: #1e293b;
+            padding: 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 700px;
+            transform: translateY(0);
+            transition: all 0.3s ease;
+            border: 1px solid #334155;
         }
 
-        .header {
+        .container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .title {
             text-align: center;
-            margin-bottom: 3rem;
-            padding: 2rem;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-        }
-
-        .header h1 {
-            color: #0f172a;
-            font-size: 2.8rem;
-            margin-bottom: 1rem;
-            background: linear-gradient(90deg, #3b82f6, #2dd4bf);
+            color: #f8fafc;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #60a5fa, #a855f7);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2.5rem;
-        }
-
-        .upload-section, .analysis-section {
-            background: white;
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            transition: transform 0.3s ease;
-        }
-
-        .upload-section:hover, .analysis-section:hover {
-            transform: translateY(-5px);
+        .disclaimer {
+            text-align: center;
+            color: #94a3b8;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+            padding: 1rem;
+            border-radius: 12px;
+            background: #334155;
+            border: 1px solid #475569;
         }
 
         .upload-area {
-            border: 2px dashed #3b82f6;
-            border-radius: 15px;
+            border: 3px dashed #475569;
+            border-radius: 20px;
             padding: 3rem;
             text-align: center;
-            cursor: pointer;
             transition: all 0.3s ease;
-            background: #f8fafc;
+            cursor: pointer;
+            margin-bottom: 2rem;
+            background: #0f172a;
         }
 
-        .upload-area:hover {
-            background: #eff6ff;
-            border-color: #2563eb;
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #60a5fa;
+            background: rgba(96, 165, 250, 0.1);
         }
 
-        .upload-area.dragging {
-            background: #bfdbfe;
-            border-color: #2563eb;
-            animation: pulse 1s infinite;
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #60a5fa, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        .disclaimer {
-            font-size: 0.9rem;
-            color: #64748b;
-            margin-top: 1rem;
-            padding: 0.5rem;
-            border-radius: 8px;
-            background: #f1f5f9;
+        .upload-text {
+            color: #94a3b8;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .analysis-container {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .preview-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            border: 1px solid #334155;
         }
 
         .metrics {
             display: grid;
+            grid-template-columns: repeat(2, 1fr);
             gap: 1.5rem;
-            margin-top: 2rem;
         }
 
-        .metric-item {
-            background: #f8fafc;
+        .metric-card {
+            background: #334155;
             padding: 1.5rem;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            text-align: center;
+            transition: transform 0.3s ease;
+            border: 1px solid #475569;
         }
 
-        .metric-item:hover {
+        .metric-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            background: #3e4a61;
+        }
+
+        .metric-card h3 {
+            color: #e2e8f0;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #60a5fa, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0.5rem 0;
         }
 
         .progress-bar {
-            height: 10px;
-            background: #e2e8f0;
-            border-radius: 5px;
+            height: 8px;
+            background: #1e293b;
+            border-radius: 4px;
             overflow: hidden;
-            margin: 0.8rem 0;
+            margin-top: 1rem;
         }
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #3b82f6, #2dd4bf);
+            background: linear-gradient(90deg, #60a5fa, #a855f7);
+            width: 0%;
             transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .progress-fill::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 200%;
-            height: 100%;
-            background: linear-gradient(90deg,
-                rgba(255,255,255,0) 0%,
-                rgba(255,255,255,0.3) 50%,
-                rgba(255,255,255,0) 100%);
-            animation: shimmer 2s infinite;
-        }
-
-        .button {
-            background: linear-gradient(90deg, #3b82f6, #2dd4bf);
-            color: white;
-            border: none;
-            padding: 1rem 2rem;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 1.5rem;
-        }
-
-        .button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(59,130,246,0.4);
-        }
-
-        .button:disabled {
-            background: #94a3b8;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
         }
 
         .loading {
-            display: flex;
-            gap: 0.5rem;
-            justify-content: center;
-            margin: 1rem 0;
-        }
-
-        .loading div {
-            width: 12px;
-            height: 12px;
-            background: #3b82f6;
-            border-radius: 50%;
-            animation: bounce 0.5s infinite alternate;
-        }
-
-        .results-container {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.8s ease;
-        }
-
-        .results-container.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .chart-container {
+            display: none;
+            text-align: center;
             margin: 2rem 0;
-            padding: 1.5rem;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
 
-        .tips-section {
-            background: #f8fafc;
-            padding: 1.5rem;
-            border-radius: 15px;
-            margin-top: 2rem;
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #334155;
+            border-top: 4px solid #60a5fa;
+            border-radius: 50%;
+            margin: 0 auto;
+            animation: spin 1s linear infinite;
         }
 
-        .tips-section h3 {
-            color: #0f172a;
-            margin-bottom: 1rem;
+        .loading p {
+            color: #94a3b8;
+            margin-top: 1rem;
+            font-size: 1.1rem;
         }
 
-        .feature-tag {
-            display: inline-block;
-            padding: 0.4rem 1rem;
-            background: #eff6ff;
-            color: #2563eb;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            margin: 0.5rem 0;
-            font-weight: 500;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
-        @media (max-width: 768px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-
-            .header h1 {
-                font-size: 2rem;
-            }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>Advanced Beauty Analyzer Pro</h1>
-            <p>AI-powered facial analysis with advanced algorithms</p>
+        <h1 class="title">Beauty Analyzer AI</h1>
+        
+        <div class="disclaimer">
+            ⚠️ Please note: These results are generated by AI and are not guaranteed to be accurate. 
+            Beauty is subjective and cannot be truly measured by algorithms. Don't let these scores affect your self-image! ✨
         </div>
 
-        <div class="main-content">
-            <div class="upload-section">
-                <div class="upload-area" id="uploadArea">
-                    <img src="/api/placeholder/50/50" alt="upload icon" id="uploadIcon">
-                    <p>Drag & Drop or Click to Upload</p>
-                    <input type="file" id="fileInput" hidden accept="image/*">
-                    <img id="imagePreview" alt="Preview" style="display: none; max-width: 100%; border-radius: 10px; margin-top: 1rem;">
-                    <canvas id="faceCanvas" style="display: none;"></canvas>
-                    <div class="disclaimer">
-                        Note: Results are generated using AI algorithms and should be considered as estimates. Individual results may vary.
-                    </div>
-                </div>
-                <button class="button" id="analyzeBtn" disabled>Analyze Photo</button>
-            </div>
-
-            <div class="analysis-section">
-                <h2>Analysis Results</h2>
-                <div class="metrics" id="metricsContainer"></div>
-                <div class="chart-container">
-                    <canvas id="radarChart"></canvas>
-                </div>
-                <div class="tips-section">
-                    <h3>Personalized Recommendations</h3>
-                    <div id="tipsContent"></div>
-                </div>
-            </div>
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📸</div>
+            <p class="upload-text">Drop your image here or click to upload</p>
+            <input type="file" id="fileInput" accept="image/*" style="display: none">
         </div>
-    </div>
 
-    <script>
-        let chart = null;
-        let analysisInProgress = false;
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing image with AI...</p>
+        </div>
 
-        // Enhanced analysis algorithms
-        class FaceAnalyzer {
-            constructor() {
-                this.weights = {
-                    symmetry: 1.2,
-                    harmony: 1.1,
-                    proportion: 1.15,
-                    skinHealth: 1.05,
-                    features: 1.0
-                };
-            }
-
-            analyzeFacialSymmetry(imageData) {
-                // Simulate advanced symmetry analysis
-                return this.calculateWeightedScore(85, 95, this.weights.symmetry);
-            }
-
-            analyzeSkinHealth(imageData) {
-                // Simulate skin analysis with texture and tone consideration
-                return this.calculateWeightedScore(80, 98, this.weights.skinHealth);
-            }
-
-            calculateWeightedScore(min, max, weight) {
-                const baseScore = Math.random() * (max - min) + min;
-                return Math.min(100, baseScore * weight);
-            }
-
-            getConfidenceScore() {
-                return Math.floor(Math.random() * 10 + 90);
-            }
-        }
-
-        const analyzer = new FaceAnalyzer();
-
-        // Enhanced features with weighted scoring
-        const features = [
-            {
-                name: 'Facial Symmetry',
-                description: 'Advanced analysis of left-right facial balance',
-                weight: 1.2,
-                analyze: () => analyzer.analyzeFacialSymmetry()
-            },
-            {
-                name: 'Skin Health',
-                description: 'Multi-factor analysis of texture, tone, and clarity',
-                weight: 1.05,
-                analyze: () => analyzer.analyzeSkinHealth()
-            },
-            {
-                name: 'Facial Harmony',
-                description: 'Golden ratio analysis of feature placement',
-                weight: 1.1,
-                analyze: () => analyzer.calculateWeightedScore(85, 97, 1.1)
-            },
-            {
-                name: 'Feature Balance',
-                description: 'Comparative analysis of facial features',
-                weight: 1.0,
-                analyze: () => analyzer.calculateWeightedScore(82, 96, 1.0)
-            }
-        ];
-
-        // Initialize upload functionality with enhanced UI feedback
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        const imagePreview = document.getElementById('imagePreview');
-        const analyzeBtn = document.getElementById('analyzeBtn');
-        const faceCanvas = document.getElementById('faceCanvas');
-        const ctx = faceCanvas.getContext('2d');
-
-        uploadArea.addEventListener('click', () => fileInput.click());
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragging');
-        });
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragging');
-        });
-        uploadArea.addEventListener('drop', handleDrop);
-        fileInput.addEventListener('change', handleFileSelect);
-
-        function handleDrop(e) {
-            e.preventDefault();
-            uploadArea.classList.remove('dragging');
-            const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('image/')) {
-                processImage(file);
-            }
-        }
-
-        function handleFileSelect(e) {
-            if (e.target.files[0]) {
-                processImage(e.target.files[0]);
-            }
-        }
-
-        function processImage(file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                imagePreview.src = e.target.result;
-                imagePreview.style.display = 'block';
-                analyzeBtn.disabled = false;
-                
-                const img = new Image();
-                img.onload = () => {
-                    faceCanvas.width = img.width;
-                    faceCanvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        analyzeBtn.addEventListener('click', async () => {
-            if (analysisInProgress) return;
+        <div class="analysis-container" id="analysisContainer">
+            <img id="previewImage" class="preview-image" src="" alt="Preview">
             
-            analysisInProgress = true;
-            analyzeBtn.disabled = true;
-            analyzeBtn.textContent = 'Analyzing...';
-            
-            const results = await performAnalysis();
-            displayResults(results);
-            
-            analysisInProgress = false;
-            analyzeBtn.disabled = false;
-            analyzeBtn.textContent = 'Analyze Photo';
-        });
-
-        async function performAnalysis() {
-            // Simulate processing delay with progress updates
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            return features.map(feature => ({
-                ...feature,
-                score: feature.analyze(),
-                confidence: analyzer.getConfidenceScore()
-            }));
-        }
-
-        function displayResults(results) {
-            const metricsContainer = document.getElementById('metricsContainer');
-            metricsContainer.innerHTML = '';
-
-            results.forEach(result => {
-                const metricItem = document.createElement('div');
-                metricItem.className = 'metric-item';
-                metricItem.innerHTML = `
-                    <div class="metric-header">
-                        <h3>${result.name}</h3>
-                        <span>${result.score.toFixed(1)}/100</span>
-                    </div>
+            <div class="metrics">
+                <div class="metric-card">
+                    <h3>Beauty Score</h3>
+                    <div class="metric-value" id="beautyScore">0.0</div>
                     <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${result.score}%"></div>
+                        <div class="progress-fill" id="beautyProgress"></div>
                     </div>
-                    <p class="feature-tag">Confidence: ${result.confidence}%</p>
-                    <p>${result.description}</p>
-                `;
-                metricsContainer.appendChild(metricItem);
-            });
-
-            updateChart(results);
-            generateRecommendations(results);
-
-            // Animate results container
-            const resultsContainer = document.querySelector('.results-container');
-            resultsContainer.classList.add('visible');
-        }
-
-        function updateChart(results) {
-            if (chart) {
-                chart.destroy();
-            }
-
-            const ctx = document.getElementById('radarChart').getContext('2d');
-            chart = new Chart(ctx, {
-                type: 'radar',
-                data: {
-                    labels: results.map(r => r.name),
-                    datasets: [{
-                        label: 'Beauty Analysis Score',
-                        data: results.map(r => r.score),
-                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                        borderColor: 'rgba(59, 130, 246, 0.8)',
-                        pointBackgroundColor: 'rgba(59, 130, 246, 1)',
-                        pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: 'rgba(59, 130, 246, 1)',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: (context) => {
-                                    return `Score: ${context.raw.toFixed(1)}`;
-                                }
-                            }
-                        }
-                    },
-                    elements: {
-                        line: {
-                            tension: 0.4
-                        }
-                    },
-                    scales: {
-                        r: {
-                            angleLines: {
-                                display: true,
-                                color: 'rgba(0, 0, 0, 0.1)'
-                            },
-                            suggestedMin: 0,
-                            suggestedMax: 100,
-                            ticks: {
-                                stepSize: 20,
-                                backdropColor: 'transparent'
-                            },
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            pointLabels: {
-                                font: {
-                                    size: 12,
-                                    family: "'Inter', sans-serif"
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        function generateRecommendations(results) {
-            const tipsContent = document.getElementById('tipsContent');
-            const recommendations = [];
-            
-            // Advanced recommendation system based on score patterns
-            results.forEach(result => {
-                const score = result.score;
-                const feature = result.name;
-                
-                if (score < 85) {
-                    recommendations.push(...getDetailedRecommendations(feature, score));
-                }
-            });
-
-            // Calculate overall harmony score
-            const averageScore = results.reduce((acc, curr) => acc + curr.score, 0) / results.length;
-            
-            tipsContent.innerHTML = `
-                <div class="overall-score">
-                    <p class="feature-tag">Overall Harmony Score: ${averageScore.toFixed(1)}%</p>
                 </div>
-                ${recommendations.length > 0 
-                    ? `<div class="recommendations">
-                        ${recommendations.map(rec => `
-                            <div class="recommendation-item">
-                                <p>• ${rec}</p>
-                            </div>
-                        `).join('')}
-                       </div>`
-                    : '<p>Your features are well-balanced! Focus on maintaining your current routine.</p>'
-                }
-            `;
+                <div class="metric-card">
+                    <h3>Symmetry</h3>
+                    <div class="metric-value" id="symmetryScore">0.0</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="symmetryProgress"></div>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <h3>Skin Health</h3>
+                    <div class="metric-value" id="skinScore">0.0</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="skinProgress"></div>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <h3>Harmony</h3>
+                    <div class="metric-value" id="harmonyScore">0.0</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="harmonyProgress"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+ 
+    </div>
+    <script>
+    // Firebase configuration remains the same
+    const firebaseConfig = {
+        apiKey: "AIzaSyBk24eVfBQoPQ8Adiw9mA2sS_tpzwJ-ksk",
+        authDomain: "imagetotext-4c3e3.firebaseapp.com",
+        projectId: "imagetotext-4c3e3",
+        storageBucket: "imagetotext-4c3e3.appspot.com",
+        messagingSenderId: "643977043225",
+        appId: "1:643977043225:web:9d648f58d7098a0c78f988",
+        measurementId: "G-XRQFS9KGR0"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const storage = firebase.storage();
+    
+    // Elements
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const loading = document.getElementById('loading');
+    const analysisContainer = document.getElementById('analysisContainer');
+    const previewImage = document.getElementById('previewImage');
+    
+    // Upload handling with validation
+    uploadArea.addEventListener('click', () => fileInput.click());
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        handleFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+    
+    async function handleFile(file) {
+        if (!file) {
+            alert('No file selected.');
+            return;
         }
-
-        function getDetailedRecommendations(feature, score) {
-            const recommendations = {
-                'Facial Symmetry': [
-                    'Practice facial exercises targeting muscle balance',
-                    'Consider facial massage techniques',
-                    'Maintain good posture to prevent facial muscle imbalance'
-                ],
-                'Skin Health': [
-                    'Develop a consistent skincare routine',
-                    'Stay hydrated with at least 8 glasses of water daily',
-                    'Consider adding antioxidant-rich foods to your diet',
-                    'Protect your skin from UV damage'
-                ],
-                'Facial Harmony': [
-                    'Experiment with different hairstyles to frame your face',
-                    'Consider the golden ratio principles when styling',
-                    'Focus on balanced facial care routines'
-                ],
-                'Feature Balance': [
-                    'Use makeup techniques to enhance natural features',
-                    'Consider face yoga exercises',
-                    'Maintain a healthy lifestyle for overall facial wellness'
-                ]
+        
+        if (!file.type.startsWith('image/')) {
+            alert('Please upload an image file.');
+            return;
+        }
+    
+        if (file.size > 5 * 1024 * 1024) {
+            alert('File size should be less than 5MB.');
+            return;
+        }
+    
+        loading.style.display = 'block';
+        analysisContainer.style.display = 'none';
+    
+        try {
+            const storageRef = storage.ref();
+            const fileRef = storageRef.child(`beauty_analysis/${Date.now()}_${file.name}`);
+            await fileRef.put(file);
+            const imageUrl = await fileRef.getDownloadURL();
+    
+            previewImage.src = URL.createObjectURL(file);
+            const results = await processImage(file);
+            updateUI(results);
+    
+            loading.style.display = 'none';
+            analysisContainer.style.display = 'block';
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while processing the image. Please try again.');
+            loading.style.display = 'none';
+        }
+    }
+    
+    async function processImage(file) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+    
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                
+                // Calculate all scores
+                const beautyMetrics = calculateBeautyMetrics(imageData);
+                const symmetryScore = calculateSymmetryScore(imageData);
+                const skinHealthScore = calculateSkinHealthScore(imageData);
+                const harmonyScore = calculateHarmonyScore(imageData);
+    
+                resolve({
+                    beauty: beautyMetrics,
+                    symmetry: symmetryScore,
+                    skinHealth: skinHealthScore,
+                    harmony: harmonyScore
+                });
             };
-
-            // Select recommendations based on score severity
-            const featureRecs = recommendations[feature] || [];
-            const numRecs = score < 75 ? 3 : (score < 80 ? 2 : 1);
-            
-            return featureRecs
-                .slice(0, numRecs)
-                .map(rec => `${feature}: ${rec}`);
-        }
-
-        // Add loading animation
-        function showLoading() {
-            const loading = document.createElement('div');
-            loading.className = 'loading';
-            for (let i = 0; i < 3; i++) {
-                const dot = document.createElement('div');
-                loading.appendChild(dot);
-            }
-            return loading;
-        }
-
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', () => {
-            // Add initial animation classes
-            document.querySelectorAll('.metric-item').forEach((item, index) => {
-                item.style.animationDelay = `${index * 0.1}s`;
-            });
+            img.src = URL.createObjectURL(file);
         });
-    </script>
+    }
+    
+    function calculateBeautyMetrics(imageData) {
+        const { width, height, data } = imageData;
+        let scores = {
+            contrast: 0,
+            colorBalance: 0,
+            luminance: 0,
+            faceShape: 0
+        };
+    
+        // Calculate contrast
+        let minLum = 255, maxLum = 0;
+        for (let i = 0; i < data.length; i += 4) {
+            const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+            minLum = Math.min(minLum, lum);
+            maxLum = Math.max(maxLum, lum);
+        }
+        scores.contrast = (maxLum - minLum) / 255;
+    
+        // Calculate color balance
+        let totalR = 0, totalG = 0, totalB = 0;
+        for (let i = 0; i < data.length; i += 4) {
+            totalR += data[i];
+            totalG += data[i + 1];
+            totalB += data[i + 2];
+        }
+        const pixelCount = data.length / 4;
+        const avgR = totalR / pixelCount;
+        const avgG = totalG / pixelCount;
+        const avgB = totalB / pixelCount;
+        const avgColor = (avgR + avgG + avgB) / 3;
+        scores.colorBalance = 1 - (Math.abs(avgR - avgColor) + Math.abs(avgG - avgColor) + Math.abs(avgB - avgColor)) / (3 * 255);
+    
+        // Calculate luminance distribution
+        const lumHistogram = new Array(256).fill(0);
+        for (let i = 0; i < data.length; i += 4) {
+            const lum = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+            lumHistogram[lum]++;
+        }
+        const normalizedHist = lumHistogram.map(val => val / pixelCount);
+        scores.luminance = calculateEntropyScore(normalizedHist);
+    
+        // Calculate face shape score based on aspect ratio and golden ratio
+        const aspectRatio = width / height;
+        const goldenRatio = 1.618;
+        scores.faceShape = 1 - Math.abs(aspectRatio - goldenRatio) / goldenRatio;
+    
+        // Combine all metrics with weights
+        const finalScore = (
+            scores.contrast * 0.25 +
+            scores.colorBalance * 0.25 +
+            scores.luminance * 0.25 +
+            scores.faceShape * 0.25
+        ) * 10;
+    
+        return clamp(finalScore, 0, 10);
+    }
+    
+    function calculateSymmetryScore(imageData) {
+        const { width, height, data } = imageData;
+        let symmetryScore = 0;
+        const midPoint = Math.floor(width / 2);
+    
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < midPoint; x++) {
+                const leftIdx = (y * width + x) * 4;
+                const rightIdx = (y * width + (width - 1 - x)) * 4;
+    
+                // Compare RGB values
+                const diff = (
+                    Math.abs(data[leftIdx] - data[rightIdx]) +
+                    Math.abs(data[leftIdx + 1] - data[rightIdx + 1]) +
+                    Math.abs(data[leftIdx + 2] - data[rightIdx + 2])
+                ) / (3 * 255);
+    
+                // Weight differences based on position
+                const horizontalWeight = 1 - (x / midPoint); // Give more weight to center
+                const verticalWeight = 1 - Math.abs((y / height) - 0.5) * 2; // Give more weight to middle height
+    
+                symmetryScore += (1 - diff) * horizontalWeight * verticalWeight;
+            }
+        }
+    
+        return clamp((symmetryScore / (height * midPoint)) * 10, 0, 10);
+    }
+    
+    function calculateSkinHealthScore(imageData) {
+        const { data } = imageData;
+        let skinPixels = 0;
+        let skinHealthScore = 0;
+    
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+    
+            // Check if pixel is skin-colored
+            if (isSkinTone(r, g, b)) {
+                skinPixels++;
+                
+                // Analyze skin tone evenness
+                const colorVariance = Math.abs(r - g) + Math.abs(g - b) + Math.abs(b - r);
+                const evenness = 1 - (colorVariance / (3 * 255));
+                
+                // Check for optimal skin luminance (healthy glow)
+                const luminance = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+                const luminanceScore = 1 - Math.abs(luminance - 0.6); // 0.6 is optimal luminance
+                
+                skinHealthScore += (evenness * 0.6 + luminanceScore * 0.4);
+            }
+        }
+    
+        return skinPixels > 0 ? clamp((skinHealthScore / skinPixels) * 10, 0, 10) : 5;
+    }
+    
+    function calculateHarmonyScore(imageData) {
+        const { width, height } = imageData;
+        
+        // Calculate golden ratio score
+        const aspectRatio = width / height;
+        const goldenRatio = 1.618;
+        const ratioScore = 1 - Math.abs(aspectRatio - goldenRatio) / goldenRatio;
+    
+        // Calculate rule of thirds score
+        const thirdsScore = calculateRuleOfThirds(imageData);
+    
+        // Calculate color harmony
+        const colorScore = calculateColorHarmony(imageData);
+    
+        // Combine scores with weights
+        const harmonyScore = (
+            ratioScore * 0.3 +
+            thirdsScore * 0.4 +
+            colorScore * 0.3
+        ) * 10;
+    
+        return clamp(harmonyScore, 0, 10);
+    }
+    
+    // Helper functions
+    function calculateEntropyScore(histogram) {
+        let entropy = 0;
+        histogram.forEach(p => {
+            if (p > 0) {
+                entropy -= p * Math.log2(p);
+            }
+        });
+        return entropy / Math.log2(histogram.length); // Normalize to [0,1]
+    }
+    
+    function isSkinTone(r, g, b) {
+        return (
+            r > g && g > b && // Red > Green > Blue is typical for skin
+            r > 95 && g > 40 && b > 20 && // Minimum values for skin
+            r - g > 15 && // Red and green difference
+            r - b > 30 && // Red and blue difference
+            g - b > 15 && // Green and blue difference
+            r < 250 && g < 250 && b < 250 // Avoid pure white
+        );
+    }
+    
+    function calculateRuleOfThirds(imageData) {
+        const { width, height, data } = imageData;
+        const thirdW = width / 3;
+        const thirdH = height / 3;
+        let intersectionScores = 0;
+    
+        // Check intersection points
+        const intersections = [
+            {x: thirdW, y: thirdH},
+            {x: thirdW * 2, y: thirdH},
+            {x: thirdW, y: thirdH * 2},
+            {x: thirdW * 2, y: thirdH * 2}
+        ];
+    
+        intersections.forEach(point => {
+            const idx = (Math.floor(point.y) * width + Math.floor(point.x)) * 4;
+            const brightness = (data[idx] + data[idx + 1] + data[idx + 2]) / (3 * 255);
+            intersectionScores += brightness;
+        });
+    
+        return intersectionScores / 4;
+    }
+    
+    function calculateColorHarmony(imageData) {
+        const { data } = imageData;
+        let totalHarmony = 0;
+        const samples = Math.floor(data.length / 400); // Sample every 100th pixel
+    
+        for (let i = 0; i < data.length; i += samples * 4) {
+            const h1 = rgbToHsl(data[i], data[i + 1], data[i + 2])[0];
+            for (let j = i + samples * 4; j < data.length; j += samples * 4) {
+                const h2 = rgbToHsl(data[j], data[j + 1], data[j + 2])[0];
+                const diff = Math.abs(h1 - h2);
+                // Check for complementary, triadic, or analogous relationships
+                if (diff > 0.45 && diff < 0.55) totalHarmony += 1; // Complementary
+                if (diff > 0.32 && diff < 0.35) totalHarmony += 0.8; // Triadic
+                if (diff < 0.05) totalHarmony += 0.6; // Analogous
+            }
+        }
+    
+        return clamp(totalHarmony / (data.length / (samples * 4)), 0, 1);
+    }
+    
+    function rgbToHsl(r, g, b) {
+        r /= 255; g /= 255; b /= 255;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        let h, s, l = (max + min) / 2;
+    
+        if (max === min) {
+            h = s = 0;
+        } else {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+        }
+    
+        return [h, s, l];
+    }
+    
+    function clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
+    }
+    
+    function updateUI(results) {
+        Object.entries(results).forEach(([metric, score], index) => {
+            const scoreElement = document.getElementById(`${metric}Score`);
+            const progressElement = document.getElementById(`${metric}Progress`);
+            
+            if (scoreElement && progressElement) {
+                setTimeout(() => {
+                    animateNumber(scoreElement, 0, score, 1500);
+                    progressElement.style.width = `${score * 10}%`;
+                }, index * 200);
+            }
+        });
+    }
+    
+    function animateNumber(element, start, end, duration) {
+        const startTime = performance.now();
+        
+        function update(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            const easeProgress = 1 - Math.pow(1 - progress, 4);
+            const current = start + (end - start) * easeProgress;
+            
+            element.textContent = current.toFixed(1);
+            
+            if (progress < 1) {
+                requestAnimationFrame(update);
+            }
+        }
+        
+        requestAnimationFrame(update);
+    }
+</script>
 </body>
 </html>
